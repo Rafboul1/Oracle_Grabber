@@ -1,0 +1,23 @@
+# Secrets & local state
+config.json
+instance_details.json
+.oci/
+
+# Logs
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Vault-internal doc (not shipped on GitHub)
+CLAUDE.md

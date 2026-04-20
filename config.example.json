@@ -1,0 +1,28 @@
+{
+    "oci": {
+        "config_file_path": "~/.oci/config",
+        "config_profile": "DEFAULT",
+        "compartment_id": "ocid1.tenancy.oc1..YOUR_TENANCY_OCID",
+        "availability_domain": "AD-1",
+        "subnet_id": "ocid1.subnet.oc1.YOUR_REGION.YOUR_SUBNET_OCID",
+        "image_id": "ocid1.image.oc1.YOUR_REGION.YOUR_IMAGE_OCID",
+        "shape": "VM.Standard.A1.Flex",
+        "ocpus": 1,
+        "memory_in_gbs": 6,
+        "boot_volume_size_in_gbs": 50,
+        "ssh_public_key": "ssh-rsa AAAA... your-public-key-here",
+        "instance_display_name": "my-arm-instance"
+    },
+    "telegram": {
+        "enabled": false,
+        "bot_token": "YOUR_BOT_TOKEN",
+        "chat_id": "YOUR_CHAT_ID"
+    },
+    "retry": {
+        "min_interval_seconds": 90,
+        "max_interval_seconds": 120,
+        "rate_limit_initial_backoff_seconds": 60,
+        "rate_limit_max_backoff_seconds": 600,
+        "max_duration_hours": 96
+    }
+}

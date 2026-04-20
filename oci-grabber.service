@@ -1,0 +1,28 @@
+[Unit]
+Description=OCI Free Tier Instance Grabber v3
+Documentation=https://github.com/rafboul/oracle-grabber
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adapter User + WorkingDirectory selon ta distro :
+#   Oracle Linux : opc / /home/opc
+#   Ubuntu       : ubuntu / /home/ubuntu
+#   AWS Amazon   : ec2-user / /home/ec2-user
+User=opc
+WorkingDirectory=/home/opc
+ExecStart=/usr/bin/python3 /home/opc/oci_instance_grabber_v3.py
+
+# Restart uniquement sur crash (exit != 0).
+# Sur succès (exit 0) ou timeout (exit 0) → pas de restart → notif Telegram suffit.
+Restart=on-failure
+RestartSec=30s
+
+# Logs dans journalctl (journalctl -u oci-grabber -f)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oci-grabber
+
+[Install]
+WantedBy=multi-user.target
