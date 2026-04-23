@@ -8,7 +8,7 @@ Il tente la création en continu avec un timing calibré sur le rate limit Oracl
 
 Les ressources ARM gratuites (4 OCPU / 24 Go) d'Oracle sont très demandées. Dans plusieurs régions (Paris, Francfort, Londres...), la capacité est épuisée et il faut re-tenter pendant des heures/jours. Ce script automatise ça proprement :
 
-- **Stratégie "petit pied"** : commencer par 1 OCPU / 6 Go (configurable) maximise les chances ; tu pourras redimensionner plus tard.
+- **Stratégie "petit pied"** : commencer par 1 OCPU / 6 Go (configurable) maximise les chances ; il est possible de redimensionner plus tard.
 - **Rotation FD-1 → FD-2 → FD-3** : chaque Fault Domain a son propre pool — en essayer 3 triple les chances.
 - **Timing calibré** : Oracle limite `LaunchInstance` à ~1 requête / 120s / tenant. Le script envoie une tentative toutes les 90-120s pour rester sous le radar.
 - **Backoff 429 exponentiel** : 60s → 120s → 240s → 600s, reset après 2 succès d'affilée.
@@ -18,7 +18,7 @@ Les ressources ARM gratuites (4 OCPU / 24 Go) d'Oracle sont très demandées. Da
 ## Prérequis
 
 - Un compte Oracle Cloud (Free Tier ou Pay As You Go — **PAYG a une meilleure priorité** sur les ARM).
-- Une VM déjà active dans ton tenant (micro x86 free tier = parfait) pour faire tourner le script 24/7.
+- Une VM déjà active dans le tenant (micro x86 free tier = parfait) pour faire tourner le script 24/7.
 - Une clé API OCI configurée dans `~/.oci/config` ([doc officielle](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm)).
 - Python 3.9+ sur la VM.
 - (Optionnel) Un bot Telegram — créé via [@BotFather](https://t.me/BotFather).
@@ -32,14 +32,14 @@ pip install -r requirements.txt
 cp config.example.json config.json
 ```
 
-Édite `config.json` avec tes valeurs :
+Éditez `config.json` avec les valeurs :
 
-- `oci.compartment_id` — OCID de ton compartment (tenancy OCID fonctionne)
+- `oci.compartment_id` — OCID de le compartment (tenancy OCID fonctionne)
 - `oci.subnet_id` — OCID d'un subnet public dans la région cible
 - `oci.image_id` — OCID d'une image ARM compatible (Ubuntu, Oracle Linux...) dans la région
-- `oci.ssh_public_key` — ta clé publique SSH
+- `oci.ssh_public_key` — la clé publique SSH
 - `oci.ocpus` / `memory_in_gbs` — configuration de l'instance cible (1/6 conseillé pour démarrer)
-- `telegram.enabled` — `false` si tu ne veux pas de notifs
+- `telegram.enabled` — `false` si vous ne voulez pas de notifs
 
 ## Usage
 
@@ -57,11 +57,11 @@ Sur ta VM :
 
 ```bash
 # 1. Copier les fichiers
-scp oci_instance_grabber_v3.py config.json user@ta-vm:~/
-scp oci-grabber.service user@ta-vm:/tmp/
+scp oci_instance_grabber_v3.py config.json user@la-vm:~/
+scp oci-grabber.service user@la-vm:/tmp/
 
 # 2. SSH sur la VM, adapter le service (User + WorkingDirectory selon distro)
-ssh user@ta-vm
+ssh user@la-vm
 sudo cp /tmp/oci-grabber.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable oci-grabber
@@ -73,10 +73,10 @@ journalctl -u oci-grabber -f
 
 ### Monitoring via SSH tunnel
 
-Depuis ta machine locale :
+Depuis la machine locale :
 
 ```bash
-ssh -L 8080:localhost:8080 user@ta-vm
+ssh -L 8080:localhost:8080 user@la-vm
 curl http://localhost:8080/status
 ```
 
@@ -106,9 +106,9 @@ Le fichier `config.json` est découpé en 3 sections :
 
 ## Limitations et choix
 
-- **Pas de re-provisioning** : au succès, le script écrit `instance_details.json` et s'arrête. La configuration post-création (install Docker, etc.) est à ta charge.
+- **Pas de re-provisioning** : au succès, le script écrit `instance_details.json` et s'arrête. La configuration post-création (install Docker, etc.) est à votre charge.
 - **Un seul shape par run** : pour tenter plusieurs configs (1/6, 2/12...), lance plusieurs processus ou modifie `config.json` entre deux runs.
-- **Pas de gestion des quotas** : si tu dépasses ton quota `LimitExceeded`, le script s'arrête (comportement volontaire).
+- **Pas de gestion des quotas** : si vous dépassez votre quota `LimitExceeded`, le script s'arrête (comportement volontaire).
 
 ## Disclaimer
 

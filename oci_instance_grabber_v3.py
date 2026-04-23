@@ -41,14 +41,14 @@ try:
     import requests
     from requests.adapters import HTTPAdapter
 except ImportError:
-    print("❌ 'requests' n'est pas installé. Lance : pip install requests")
+    print("Erreur : 'requests' n'est pas installé. Lancez : pip install requests")
     sys.exit(1)
 
 try:
     import oci
     from oci.retry import NoneRetryStrategy
 except ImportError:
-    print("❌ Le SDK OCI n'est pas installé. Lance : pip install oci")
+    print("Erreur : Le SDK OCI n'est pas installé. Lancez : pip install oci")
     sys.exit(1)
 
 
@@ -142,11 +142,11 @@ def start_status_server(host: str, port: int) -> None:
     """Lance le serveur HTTP de monitoring dans un thread daemon."""
     try:
         server = HTTPServer((host, port), StatusHandler)
-        log.info(f"📡 Monitoring HTTP : http://{host}:{port}/status (localhost only)")
-        log.info(f"   → SSH tunnel : ssh -L {port}:localhost:{port} user@ton-vps")
+        log.info(f"Monitoring HTTP : http://{host}:{port}/status (localhost only)")
+        log.info(f"   SSH tunnel : ssh -L {port}:localhost:{port} user@ton-vps")
         server.serve_forever()
     except OSError as e:
-        log.warning(f"⚠️ Impossible de démarrer le monitoring HTTP : {e}")
+        log.warning(f"Impossible de démarrer le monitoring HTTP : {e}")
 
 
 # ─── Telegram ────────────────────────────────────────────────────────────────
@@ -157,11 +157,11 @@ def send_telegram(bot_token: str, chat_id: str, message: str, async_send: bool =
         try:
             resp = requests.post(url, json=payload, timeout=10)
             if resp.status_code == 200:
-                log.info("✅ Notification Telegram envoyée !")
+                log.info("Notification Telegram envoyée.")
             else:
-                log.warning(f"⚠️ Telegram code {resp.status_code}: {resp.text[:100]}")
+                log.warning(f"Telegram code {resp.status_code}: {resp.text[:100]}")
         except Exception as e:
-            log.warning(f"⚠️ Erreur Telegram : {e}")
+            log.warning(f"Erreur Telegram : {e}")
 
     if async_send:
         threading.Thread(target=_send, daemon=True).start()
@@ -192,7 +192,7 @@ def get_availability_domain(identity_client, compartment_id: str, ad_name: str) 
     if ads:
         log.warning(f"AD '{ad_name}' non trouvé, utilisation de : {ads[0].name}")
         return ads[0].name
-    log.error("Aucun Availability Domain trouvé !")
+    log.error("Aucun Availability Domain trouvé.")
     sys.exit(1)
 
 
@@ -268,30 +268,30 @@ def try_create_instance(
         elif e.status == 429:
             # TooManyRequests : Oracle limite à ~1 req processée / 120s / tenant
             # Pas de Retry-After dans les headers — on gère avec backoff exponentiel
-            log.warning(f"⚠️ Rate limited (429) — Too many requests for the tenant")
+            log.warning(f"Rate limited (429) — Too many requests for the tenant")
             _stats["last_error"] = "429 TooManyRequests"
             _stats["rate_limited_count"] = _stats["rate_limited_count"] + 1
             return None, True
 
         elif "LimitExceeded" in str(e.code):
-            log.error(f"🚫 Limite atteinte : {msg}")
-            log.error("Tu as peut-être déjà une instance active qui utilise ton quota.")
+            log.error(f"Limite atteinte : {msg}")
+            log.error("Vous avez peut-être déjà une instance active qui utilise votre quota.")
             _stats["status"] = "fatal_limit_exceeded"
             sys.exit(1)
 
         elif "NotAuthorized" in str(e.code) or e.status == 401:
-            log.error(f"🔒 Erreur d'authentification : {msg}")
-            log.error("Vérifie ta clé API et ton fichier ~/.oci/config")
+            log.error(f"Erreur d'authentification : {msg}")
+            log.error("Vérifiez votre clé API et votre fichier ~/.oci/config")
             _stats["status"] = "fatal_auth_error"
             sys.exit(1)
 
         else:
-            log.error(f"❌ Erreur OCI inattendue (status={e.status}, code={e.code}): {msg}")
+            log.error(f"Erreur OCI inattendue (status={e.status}, code={e.code}): {msg}")
             _stats["last_error"] = f"OCI {e.status}/{e.code}: {msg[:80]}"
             return None, False
 
     except Exception as e:
-        log.error(f"❌ Erreur inattendue : {e}")
+        log.error(f"Erreur inattendue : {e}")
         _stats["last_error"] = str(e)[:120]
         return None, False
 
@@ -321,7 +321,7 @@ def main() -> None:
     ).start()
 
     log.info("=" * 60)
-    log.info("🚀 OCI Instance Grabber — v3 (durable + sécurisé)")
+    log.info("OCI Instance Grabber — v3 (durable + sécurisé)")
     log.info("=" * 60)
     log.info(f"Shape          : {oci_conf['shape']}")
     log.info(f"OCPUs          : {ocpus}")
@@ -339,16 +339,16 @@ def main() -> None:
         send_telegram(
             telegram_conf["bot_token"],
             telegram_conf["chat_id"],
-            "🤖 <b>OCI Grabber v3 démarré !</b>\n\n"
+            "<b>OCI Grabber v3 démarré</b>\n\n"
             f"Shape: {oci_conf['shape']}\n"
             f"OCPUs: {ocpus} | RAM: {memory_gb} Go\n"
             f"Stratégie: FD Rotation\n"
             f"Sleep: {ooc_min}-{ooc_max}s | Backoff 429 expo (max {backoff_max}s)\n\n"
-            "Je te préviens dès qu'une instance est créée. 🔄",
+            "Notification prévue lors de la création d'une instance.",
         )
 
     # Init OCI SDK avec session Keep-Alive
-    log.info("🔧 Init OCI SDK (session Keep-Alive activée)...")
+    log.info("Init OCI SDK (session Keep-Alive activée)...")
     oci_config = oci.config.from_file(
         config["oci"]["config_file_path"],
         config["oci"]["config_profile"],
@@ -371,11 +371,11 @@ def main() -> None:
         config["oci"]["compartment_id"],
         config["oci"]["availability_domain"],
     )
-    log.info(f"📍 Availability Domain : {ad_full_name}")
+    log.info(f"Availability Domain : {ad_full_name}")
 
     # Optimisation B : on construit LaunchInstanceDetails UNE SEULE FOIS
     instance_details = build_launch_details(config, ad_full_name)
-    log.info("⚙️  LaunchInstanceDetails pré-construit (réutilisé à chaque iter)")
+    log.info("LaunchInstanceDetails pré-construit (réutilisé à chaque iter)")
 
     # Boucle principale
     start_time = datetime.now()
@@ -389,7 +389,7 @@ def main() -> None:
     _stats["current_backoff_sec"] = current_backoff
 
     log.info("")
-    log.info("🔄 Début des tentatives...")
+    log.info("Début des tentatives...")
     log.info("")
 
     while datetime.now() - start_time < max_duration:
@@ -402,7 +402,7 @@ def main() -> None:
         _stats["uptime"] = elapsed_str
         _stats["last_fault_domain"] = fd
 
-        log.info(f"🔄 #{attempt} │ {fd} │ {elapsed_str}")
+        log.info(f"#{attempt} │ {fd} │ {elapsed_str}")
 
         result, rate_limited = try_create_instance(
             compute_client, instance_details, fd, no_retry_strategy
@@ -417,7 +417,7 @@ def main() -> None:
 
             log.info("")
             log.info("=" * 60)
-            log.info("🎉🎉🎉 INSTANCE CRÉÉE AVEC SUCCÈS ! 🎉🎉🎉")
+            log.info("INSTANCE CRÉÉE AVEC SUCCÈS.")
             log.info("=" * 60)
             log.info(f"ID         : {result['id']}")
             log.info(f"Nom        : {result['display_name']}")
@@ -429,28 +429,27 @@ def main() -> None:
 
             with open("instance_details.json", "w") as f:
                 json.dump(result, f, indent=2)
-            log.info("💾 Détails sauvegardés dans instance_details.json")
+            log.info("Détails sauvegardés dans instance_details.json")
 
             if telegram_enabled:
                 send_telegram(
                     telegram_conf["bot_token"],
                     telegram_conf["chat_id"],
-                    "🎉🎉🎉 <b>INSTANCE OCI CRÉÉE !</b> 🎉🎉🎉\n\n"
-                    f"📛 Nom: {result['display_name']}\n"
-                    f"🆔 ID: <code>{result['id']}</code>\n"
-                    f"📊 État: {result['lifecycle_state']}\n"
-                    f"🕐 Créée à: {result['time_created']}\n"
-                    f"🔄 Tentatives: {attempt}\n"
-                    f"⏱ Durée totale: {elapsed_str}\n\n"
-                    "Connecte-toi via SSH pour configurer ton instance ! 🚀",
-                    async_send=True,
+                    "<b>INSTANCE OCI CRÉÉE</b>\n\n"
+                    f"Nom: {result['display_name']}\n"
+                    f"ID: <code>{result['id']}</code>\n"
+                    f"État: {result['lifecycle_state']}\n"
+                    f"Créée à: {result['time_created']}\n"
+                    f"Tentatives: {attempt}\n"
+                    f"Durée totale: {elapsed_str}\n\n"
+                    "Connectez-vous via SSH pour configurer l'instance.",
                 )
             return
 
         if rate_limited:
             # Backoff exponentiel sur 429
             non_429_streak = 0  # Fix A : on repart à zéro dès qu'on prend un 429
-            log.warning(f"   ⏳ Backoff 429 : {current_backoff}s")
+            log.warning(f"   Backoff 429 : {current_backoff}s")
             _stats["current_backoff_sec"] = current_backoff
             time.sleep(current_backoff)
             current_backoff = min(
@@ -461,7 +460,7 @@ def main() -> None:
             # OOC ou erreur récupérable : sleep court aléatoire
             non_429_streak += 1  # Fix A : on incrémente le streak
             sleep_sec = random.randint(ooc_min, ooc_max)
-            log.info(f"   ⏳ Prochaine tentative dans {sleep_sec}s... (streak non-429 : {non_429_streak}/{NON_429_STREAK_TO_RESET})")
+            log.info(f"   Prochaine tentative dans {sleep_sec}s... (streak non-429 : {non_429_streak}/{NON_429_STREAK_TO_RESET})")
             time.sleep(sleep_sec)
 
             # Fix A : reset du backoff SEULEMENT après NON_429_STREAK_TO_RESET succès d'affilée
@@ -469,7 +468,7 @@ def main() -> None:
                 current_backoff != backoff_initial
                 and non_429_streak >= NON_429_STREAK_TO_RESET
             ):
-                log.info(f"   ↩ Backoff 429 reset à {backoff_initial}s (après {non_429_streak} succès)")
+                log.info(f"   Backoff 429 reset à {backoff_initial}s (après {non_429_streak} succès)")
                 current_backoff = backoff_initial
                 _stats["current_backoff_sec"] = current_backoff
 
@@ -480,7 +479,7 @@ def main() -> None:
 
     log.warning("")
     log.warning("=" * 60)
-    log.warning(f"⏰ Durée max atteinte ({max_duration_hours}h)")
+    log.warning(f"Durée max atteinte ({max_duration_hours}h)")
     log.warning(f"   Tentatives      : {attempt}")
     log.warning(f"   Rate limits 429 : {_stats['rate_limited_count']}")
     log.warning(f"   Durée totale    : {elapsed_str}")
@@ -490,12 +489,11 @@ def main() -> None:
         send_telegram(
             telegram_conf["bot_token"],
             telegram_conf["chat_id"],
-            f"⏰ <b>OCI Grabber arrêté</b> (durée max atteinte)\n\n"
+            f"<b>OCI Grabber arrêté</b> (durée max atteinte)\n\n"
             f"Tentatives: {attempt}\n"
             f"Rate limits 429: {_stats['rate_limited_count']}\n"
             f"Durée: {elapsed_str}\n\n"
-            "Relance le script si tu veux continuer.",
-            async_send=True,
+            "Relancez le script pour continuer."
         )
 
 
@@ -504,5 +502,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         _stats["status"] = "stopped"
-        log.info("\n👋 Arrêt manuel (Ctrl+C). À plus !")
+        log.info("\nArrêt manuel (Ctrl+C).")
         sys.exit(0)
