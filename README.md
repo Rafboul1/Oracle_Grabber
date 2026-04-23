@@ -98,6 +98,8 @@ Le fichier `config.json` est découpé en 3 sections :
 | `oci` | `boot_volume_size_in_gbs` | Taille du disque (défaut 50) |
 | `oci` | `ssh_public_key` | Clé SSH injectée dans l'instance |
 | `oci` | `instance_display_name` | Nom affiché dans la console OCI |
+| `oci` | `user_data_file` | Chemin vers un script (ex: `.sh`) pour cloud-init |
+| `oci` | `user_data` | Script cloud-init directement en ligne (alternative à `user_data_file`) |
 | `telegram` | `enabled` | `true`/`false` — désactive tout le flux Telegram |
 | `telegram` | `bot_token` / `chat_id` | Credentials du bot |
 | `retry` | `min_interval_seconds` / `max_interval_seconds` | Sleep aléatoire entre tentatives (défaut 90-120) |
@@ -109,6 +111,23 @@ Le fichier `config.json` est découpé en 3 sections :
 - **Pas de re-provisioning** : au succès, le script écrit `instance_details.json` et s'arrête. La configuration post-création (install Docker, etc.) est à votre charge.
 - **Un seul shape par run** : pour tenter plusieurs configs (1/6, 2/12...), lance plusieurs processus ou modifie `config.json` entre deux runs.
 - **Pas de gestion des quotas** : si vous dépassez votre quota `LimitExceeded`, le script s'arrête (comportement volontaire).
+
+## Automatisation (Cloud-Init)
+
+Vous pouvez passer un script `user_data` pour configurer la VM dès son premier démarrage (ex: installer Docker, configurer un firewall). 
+
+Exemple de fichier `cloud-init.sh` :
+```bash
+#!/bin/bash
+apt-get update
+apt-get install -y docker.io
+systemctl enable --now docker
+```
+
+Puis référencez-le dans votre `config.json` :
+```json
+"user_data_file": "cloud-init.sh"
+```
 
 ## Disclaimer
 

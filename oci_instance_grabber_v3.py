@@ -26,8 +26,10 @@ Usage :
     curl http://localhost:8080/status
 """
 
+import base64
 import json
 import logging
+import os
 import random
 import sys
 import threading
@@ -204,6 +206,27 @@ def build_launch_details(config: dict, ad_full_name: str) -> oci.core.models.Lau
     oci_conf = config["oci"]
     ocpus = float(oci_conf.get("ocpus", DEFAULT_OCPUS))
     memory_gb = float(oci_conf.get("memory_in_gbs", DEFAULT_MEMORY_GB))
+
+    metadata = {"ssh_authorized_keys": oci_conf["ssh_public_key"]}
+
+    # Support cloud-init (user_data)
+    user_data = None
+    if oci_conf.get("user_data_file"):
+        ud_path = Path(oci_conf["user_data_file"])
+        if ud_path.exists():
+            with open(ud_path, "r", encoding="utf-8") as f:
+                user_data = f.read()
+            log.info(f"Cloud-init : script chargé depuis {ud_path}")
+        else:
+            log.error(f"Fichier user_data_file introuvable : {ud_path}")
+            sys.exit(1)
+    elif oci_conf.get("user_data"):
+        user_data = oci_conf["user_data"]
+        log.info("Cloud-init : script inline chargé depuis la config")
+
+    if user_data:
+        metadata["user_data"] = base64.b64encode(user_data.encode("utf-8")).decode("utf-8")
+
     return oci.core.models.LaunchInstanceDetails(
         compartment_id=oci_conf["compartment_id"],
         availability_domain=ad_full_name,
@@ -222,7 +245,7 @@ def build_launch_details(config: dict, ad_full_name: str) -> oci.core.models.Lau
             subnet_id=oci_conf["subnet_id"],
             assign_public_ip=True,
         ),
-        metadata={"ssh_authorized_keys": oci_conf["ssh_public_key"]},
+        metadata=metadata,
     )
 
 

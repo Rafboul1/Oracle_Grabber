@@ -11,7 +11,9 @@
         "memory_in_gbs": 6,
         "boot_volume_size_in_gbs": 50,
         "ssh_public_key": "ssh-rsa AAAA... your-public-key-here",
-        "instance_display_name": "my-arm-instance"
+        "instance_display_name": "my-arm-instance",
+        "user_data_file": "",
+        "user_data": ""
     },
     "telegram": {
         "enabled": false,
